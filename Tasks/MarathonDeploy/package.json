@@ -15,7 +15,7 @@
   "devDependencies": {
     "@types/node": "^7.0.31",
     "@types/q": "^1.0.0",
-    "@types/request": "0.0.43",
+    "@types/request": "0.0.45",
     "path": "^0.12.7",
     "request": "^2.81.0",
     "vsts-task-lib": "^1.1.0"

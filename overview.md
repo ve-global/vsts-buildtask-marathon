@@ -22,6 +22,8 @@ ___
    * marathonEndpoint
    * marathon identifier (If not set , this identifier is read from marathon.json file)
    * jsonFilePath which contains deployment configuration
+   * Checkbox to fail the task when the application was previously scaled to 0
+   
 ___
 
 ## Enjoy!

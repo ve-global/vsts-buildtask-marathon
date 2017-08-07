@@ -56,6 +56,7 @@ class Main {
 
             config.identifier = tl.getInput('identifier', false);
             config.marathonFilePath = tl.getPathInput('jsonFilePath', false);
+            config.failOnScaledTo0 = tl.getBoolInput('failOnScaledTo0', false);
             return config;
         }
     }

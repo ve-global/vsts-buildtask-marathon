@@ -49,7 +49,13 @@ export class MarathonApi {
                     this.createOrUpdateApp(this.config.marathonFilePath);
 
                 } else {
-                    tl.warning("Application was previously scaled to 0. We won't override its config and won't restart it");
+                    var messageScaled =  "Application was previously scaled to 0. We won't override its config and won't restart it";
+                    if(this.config.failOnScaledTo0){
+                        throw new Error(messageScaled);
+                    }
+                    else{
+                        tl.warning(messageScaled);
+                    }
                 }
         }
     }
