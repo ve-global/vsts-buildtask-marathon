@@ -168,7 +168,7 @@ export class MarathonApi {
         let jsonResponse = JSON.parse(body);
         if (response.statusCode == 200) {
             this.deploymentId = jsonResponse.deploymentId;
-        } else
+        } else {
             throw new Error("Marathon restart error :".concat(jsonResponse.message));
         }
     }
