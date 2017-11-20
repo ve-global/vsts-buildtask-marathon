@@ -6,7 +6,9 @@ import marathonapi = require('./marathonapi');
 import MarathonApi = marathonapi.MarathonApi;
 
 class Main {
-    run() {
+    marathonApi: MarathonApi;
+
+    run() {        
         try {
             let config = this.initializeMarathonConfig();
 
@@ -26,11 +28,14 @@ class Main {
             if (!config.identifier)
                 throw new Error("Application id not found.");
 
-            let marathonApi = new MarathonApi(config);
-            marathonApi.sendToMarathon();
+            this.marathonApi = new MarathonApi(config);
+            const deploymentId = this.marathonApi.sendToMarathon();
+
+            if (config.showDeploymentProgress) {
+                this.waitUntilDeploymentFinishes(deploymentId);
+            }
 
             tl.setResult(tl.TaskResult.Succeeded, "Deployment Succeeded.");
-
         }
         catch (err) {
             let msg = err;
@@ -40,6 +45,7 @@ class Main {
             tl.setResult(tl.TaskResult.Failed, msg);
         }
     }
+
     initializeMarathonConfig(): MarathonConfig {
         let config = new MarathonConfig();
         let marathonEndpoint = tl.getInput('marathonEndpoint', true);
@@ -57,7 +63,24 @@ class Main {
             config.identifier = tl.getInput('identifier', false);
             config.marathonFilePath = tl.getPathInput('jsonFilePath', false);
             config.failOnScaledTo0 = tl.getBoolInput('failOnScaledTo0', false);
+            config.showDeploymentProgress = tl.getBoolInput('showDeploymentProgress', false);
             return config;
+        }
+    }
+
+    waitUntilDeploymentFinishes(deploymentId: string) {
+        let deploymentInProgress = true;
+        let timeoutID;
+
+        try {
+            while (deploymentInProgress)
+            {
+                timeoutID = setTimeout(()=>{deploymentInProgress = this.marathonApi.isDeploymentLaunched(deploymentId)}, 500);
+                clearTimeout(timeoutID);                
+            }
+        }
+        catch (err) {
+            clearTimeout(timeoutID);            
         }
     }
 }   

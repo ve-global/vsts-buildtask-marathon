@@ -1,4 +1,4 @@
-import tl = require('vsts-task-lib');
+import logger = require('vsts-task-lib');
 import request = require('request');
 import fs = require('fs');
 import marathonconfig = require('./marathonconfig');
@@ -7,6 +7,8 @@ import MarathonConfig = marathonconfig.MarathonConfig;
 export class MarathonApi {
     config: MarathonConfig;
     deploymentLaunched: boolean;
+    deploymentId: string;
+
     constructor(conf: MarathonConfig) {
         this.config = conf;
     }
@@ -14,7 +16,7 @@ export class MarathonApi {
     sendToMarathon() {
         let marathonFullAppPath = this.config.baseUrl.concat("/v2/apps/", this.config.identifier)
         marathonFullAppPath = marathonFullAppPath.replace(/([^:]\/)\/+/g, "$1");
-        tl.debug("marathonFullAppPath : " + marathonFullAppPath);
+        logger.debug("marathonFullAppPath : " + marathonFullAppPath);
         let options: (request.UriOptions & request.CoreOptions) = {
             uri: marathonFullAppPath
         };
@@ -25,44 +27,46 @@ export class MarathonApi {
             };
         }
         request(options, this.sendToMarathonCallBack.bind(this))
+
+        return this.deploymentId;
     }
 
     sendToMarathonCallBack(error, response, body) {
-        tl.debug("Identifier : " + this.config.identifier);
+        logger.debug("Identifier : " + this.config.identifier);
         // Error occured during request.
         if (error) {
             throw new Error("Request marathon error :".concat(error));
         }
-        tl.debug(body);
+        logger.debug(body);
         let jsonResponse = JSON.parse(body);
+
         switch (response.statusCode) {
             case 401:
             case 403:
                 throw new Error("Request marathon permission error :".concat(jsonResponse.message));
             case 404:
-                this.createOrUpdateApp(this.config.marathonFilePath);
+                this.deploymentId = this.createOrUpdateApp(this.config.marathonFilePath);
                 break;
             case 200:
                 let nbInstances = jsonResponse.app.instances;
                 if (nbInstances > 0) {
-                    tl.debug("App ".concat(this.config.identifier, " already exists in Marathon, overriding its config and restarting it to force an image pull"))
-                    this.createOrUpdateApp(this.config.marathonFilePath);
-
+                    logger.debug("App ".concat(this.config.identifier, " already exists in Marathon, overriding its config and restarting it to force an image pull"))
+                    this.deploymentId = this.createOrUpdateApp(this.config.marathonFilePath);
                 } else {
                     var messageScaled =  "Application was previously scaled to 0. We won't override its config and won't restart it";
                     if(this.config.failOnScaledTo0){
                         throw new Error(messageScaled);
                     }
                     else{
-                        tl.warning(messageScaled);
+                        logger.warning(messageScaled);
                     }
                 }
         }
     }
 
     createOrUpdateApp(marathonFilePath: string) {
-        tl._writeLine("createOrUpdateApp method. Put request with marathon json file.");
-        tl._writeLine(fs.readFileSync(marathonFilePath).toString());
+        logger._writeLine("createOrUpdateApp method. Put request with marathon json file.");
+        logger._writeLine(fs.readFileSync(marathonFilePath).toString());
         let marathonFullAppPath = this.config.baseUrl.concat("/v2/apps/", this.config.identifier);
         marathonFullAppPath = marathonFullAppPath.replace(/([^:]\/)\/+/g, "$1");
         let options: (request.UriOptions & request.CoreOptions) = {
@@ -78,6 +82,8 @@ export class MarathonApi {
             };
         }
         request(options, this.createOrUpdateAppCallBack.bind(this));
+
+        return this.deploymentId;
     }
 
     createOrUpdateAppCallBack(error, response, body) {
@@ -85,20 +91,24 @@ export class MarathonApi {
         if (error) {
             throw new Error("Request marathon deploy error :".concat(error));
         }
-        tl.debug(body);
+        logger.debug(body);
         let jsonResponse = JSON.parse(body);
         if (response.statusCode >= 200 && response.statusCode < 400) {
-            // Check if a deployment is in progress (if there is not config did not change, we force a restart to force a Docker image pull)
-            if (!this.isDeploymentLaunched())
+            // At this point the deployment was created successfully.
+            this.deploymentId = jsonResponse.deploymentId;
+            
+            // Check if the deployment is in progress (if there is not a deployment, we force a restart to force a Docker image pull)
+            if (!this.isDeploymentLaunched(this.deploymentId)) {
                 this.restartApp()
+            }
         } else {
             throw new Error("Marathon deployment error :".concat(jsonResponse.message));
         }
     }
 
-    isDeploymentLaunched() {
+    isDeploymentLaunched(deploymentId: string) {
         this.deploymentLaunched = false;
-        tl._writeLine("Check if deployment launched for specific application");
+        logger._writeLine("Check if deployment launched for specific application");
         let deploymentUrl = this.config.baseUrl.concat("/v2/deployments");
         deploymentUrl = deploymentUrl.replace(/([^:]\/)\/+/g, "$1");
         let options: request.CoreOptions = {};
@@ -108,25 +118,26 @@ export class MarathonApi {
                 pass: this.config.marathonPassword
             };
         }
-        request(deploymentUrl, options, this.isDeploymentLaunchedCallBack.bind(this))
+        request(deploymentUrl, options, this.isDeploymentLaunchedCallBack.bind(deploymentId, this))
+
         return this.deploymentLaunched;
     }
 
-    isDeploymentLaunchedCallBack(error, response, body) {
+    isDeploymentLaunchedCallBack(deploymentId, error, response, body) {
             // Error occured during request.
             if (error) {
                 throw new Error("Request marathon error :".concat(error));
             }
-            tl.debug(body);
+            logger.debug(body);
             let jsonResponse = JSON.parse(body);
-            let runningDeploymentMatcher = new RegExp(this.config.identifier.concat("\""), "i").exec(body.trim());
+            let runningDeploymentMatcher = new RegExp(deploymentId).exec(body.trim());
             if (runningDeploymentMatcher) {
                 this.deploymentLaunched = true;
             }
         }
 
     restartApp() {
-        tl._writeLine("Restart Application");
+        logger._writeLine("Restart Application");
         let restartUrl = this.config.baseUrl.concat("/v2/apps/", this.config.identifier , "/restart");
         restartUrl = restartUrl.replace(/([^:]\/)\/+/g, "$1");
         let options: (request.UriOptions & request.CoreOptions) = {
@@ -144,6 +155,8 @@ export class MarathonApi {
             };
         }
         request(options, this.restartAppCallBack.bind(this))
+
+        return this.deploymentId;
     }
 
     restartAppCallBack(error, response, body) {
@@ -151,11 +164,11 @@ export class MarathonApi {
         if (error) {
             throw new Error("Request marathon restart App error :".concat(error));
         }
-        tl.debug(body);
+        logger.debug(body);
         let jsonResponse = JSON.parse(body);
         if (response.statusCode == 200) {
-            // Check deployment
-        } else {
+            this.deploymentId = jsonResponse.deploymentId;
+        } else
             throw new Error("Marathon restart error :".concat(jsonResponse.message));
         }
     }
