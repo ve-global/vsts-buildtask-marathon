@@ -8,7 +8,7 @@ import MarathonApi = marathonapi.MarathonApi;
 class Main {
     marathonApi: MarathonApi;
 
-    run() {        
+    async run() {        
         try {
             let config = this.initializeMarathonConfig();
 
@@ -29,12 +29,10 @@ class Main {
                 throw new Error("Application id not found.");
 
             this.marathonApi = new MarathonApi(config);
-            const deploymentId = this.marathonApi.sendToMarathon();
+            const deploymentId = await this.marathonApi.sendToMarathonAsync();
 
-            if (config.showDeploymentProgress) {
-                this.waitUntilDeploymentFinishes(deploymentId);
-            }
-
+            this.waitUntilDeploymentFinishes(deploymentId);
+            
             tl.setResult(tl.TaskResult.Succeeded, "Deployment Succeeded.");
         }
         catch (err) {
@@ -70,18 +68,19 @@ class Main {
 
     waitUntilDeploymentFinishes(deploymentId: string) {
         let deploymentInProgress = true;
-        let timeoutID;
+        tl._writeLine("Deployment in progress: ".concat(deploymentId));
+        let intervalID = setInterval(async ()=>{ deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(deploymentId) }, 500);
 
         try {
-            while (deploymentInProgress)
-            {
-                timeoutID = setTimeout(()=>{deploymentInProgress = this.marathonApi.isDeploymentLaunched(deploymentId)}, 500);
-                clearTimeout(timeoutID);                
+            while (deploymentInProgress) {
+                // Waiting deployment...
             }
         }
         catch (err) {
-            clearTimeout(timeoutID);            
         }
+
+        tl._writeLine("Deployment finished: ".concat(deploymentId));
+        clearTimeout(intervalID);                        
     }
 }   
 
