@@ -30,9 +30,11 @@ class Main {
       if (!config.identifier) throw new Error('Application id not found.');
 
       this.marathonApi = new MarathonApi(config);
+      tl._writeLine(' ++ RUN ++');
       const deploymentId = await this.marathonApi.sendToMarathonAsync();
-
-      this.waitUntilDeploymentFinishes(deploymentId);
+      tl._writeLine(' ++ sendToMarathonAsync PASSED  ++');
+      await this.waitUntilDeploymentFinishes(deploymentId);
+      tl._writeLine(' ++ waitUntilDeploymentFinishes PASSED  ++');
 
       tl.setResult(tl.TaskResult.Succeeded, 'Deployment Succeeded.');
     } catch (err) {
@@ -60,14 +62,18 @@ class Main {
     // }
   }
 
-  waitUntilDeploymentFinishes(deploymentId: string) {
+  async waitUntilDeploymentFinishes(deploymentId: string) {
+    tl._writeLine(' ++ waitUntilDeploymentFinishes ++');
     let deploymentInProgress = true;
     tl._writeLine('Deployment in progress: '.concat(deploymentId));
-    let intervalID = setInterval(async () => {
-      deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
-        deploymentId
-      );
-    }, 500);
+    deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
+      deploymentId
+    );
+    // let intervalID = setInterval(async () => {
+    //   deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
+    //     deploymentId
+    //   );
+    // }, 500);
 
     try {
       while (deploymentInProgress) {
@@ -76,7 +82,7 @@ class Main {
     } catch (err) {}
 
     tl._writeLine('Deployment finished: '.concat(deploymentId));
-    clearTimeout(intervalID);
+    // clearTimeout(intervalID);
   }
 }
 

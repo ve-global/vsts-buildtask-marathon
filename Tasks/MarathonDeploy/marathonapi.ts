@@ -125,8 +125,7 @@ export class MarathonApi {
       throw new Error('Request marathon deploy error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = body; //JSON.parse(body);
-    deploymentId = 'fakeId';
+    // let jsonResponse = body; //JSON.parse(body);
     // if (response.statusCode >= 200 && response.statusCode < 400) {
     //   // At this point the deployment was created successfully.
     //   deploymentId = jsonResponse.deploymentId;
@@ -141,7 +140,8 @@ export class MarathonApi {
     //   );
     // }
 
-    return deploymentId;
+    // return deploymentId;
+    return 'fakeId';
   }
 
   async isDeploymentLaunchedAsync(deploymentId: string) {
@@ -172,7 +172,7 @@ export class MarathonApi {
       throw new Error('Request marathon error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = JSON.parse(body);
+    let jsonResponse = body; // JSON.parse(body);
     let runningDeploymentMatcher = new RegExp(deploymentId).exec(body.trim());
     if (runningDeploymentMatcher) {
       deploymentLaunched = true;
@@ -217,7 +217,7 @@ export class MarathonApi {
       throw new Error('Request marathon restart App error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = JSON.parse(body);
+    let jsonResponse = body; //JSON.parse(body);
     if (response.statusCode == 200) {
       deploymentId = jsonResponse.deploymentId;
     } else {
