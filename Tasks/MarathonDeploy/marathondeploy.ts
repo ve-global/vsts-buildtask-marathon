@@ -50,10 +50,10 @@ class Main {
       baseUrl: 'http://v-ci-mess-ms-01.ve-ci.com:8080/', //tl.getEndpointUrl(marathonEndpoint, false),
       marathonUser: 'fakeUser', //tl.getEndpointAuthorizationParameter(marathonEndpoint, "username", true),
       marathonPassword: 'fakePass', //tl.getEndpointAuthorizationParameter(marathonEndpoint, "password", true),
-      useBasicAuthentication: true,
+      useBasicAuthentication: false,
 
       identifier: 'verome/ve.rome.baseapi.service', // tl.getInput('identifier', false),
-      marathonFilePath: './marathon.json', //tl.getPathInput('jsonFilePath', false),
+      marathonFilePath: 'Tasks/MarathonDeploy/marathon.json', //tl.getPathInput('jsonFilePath', false),
       failOnScaledTo0: false, //tl.getBoolInput('failOnScaledTo0', false),
       showDeploymentProgress: true //tl.getBoolInput(
     };
