@@ -66,9 +66,13 @@ class Main {
     tl._writeLine(' ++ waitUntilDeploymentFinishes ++');
     let deploymentInProgress = true;
     tl._writeLine('Deployment in progress: '.concat(deploymentId));
-    deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
-      deploymentId
-    );
+
+    // var p = new Promise<boolean>(resolve => {
+    //   setTimeout(() => {
+    //     resolve(true);
+    //   }, 3000);
+    // });
+    // return p;
     // let intervalID = setInterval(async () => {
     //   deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
     //     deploymentId
@@ -77,7 +81,10 @@ class Main {
 
     try {
       while (deploymentInProgress) {
-        // Waiting deployment...
+        // //BRUTE FORCE
+        // deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
+        //   deploymentId
+        // );
       }
     } catch (err) {}
 

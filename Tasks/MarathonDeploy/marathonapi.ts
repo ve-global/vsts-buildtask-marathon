@@ -25,15 +25,24 @@ export class MarathonApi {
     marathonFullAppPath = marathonFullAppPath.replace(/([^:]\/)\/+/g, '$1');
     logger.debug('marathonFullAppPath : ' + marathonFullAppPath);
 
-    let options: NeedleOptions = {};
+    // let options: NeedleOptions = {};
+    // if (this.config.useBasicAuthentication) {
+    //   options.username = this.config.marathonUser;
+    //   options.password = this.config.marathonPassword;
+    //   options.auth = 'basic';
+    // }
+    let options: request.UriOptions & request.CoreOptions = {
+      uri: marathonFullAppPath
+    };
     if (this.config.useBasicAuthentication) {
-      options.username = this.config.marathonUser;
-      options.password = this.config.marathonPassword;
-      options.auth = 'basic';
+      options.auth = {
+        user: this.config.marathonUser,
+        pass: this.config.marathonPassword
+      };
     }
 
     return new Promise<string>((resolve, _) =>
-      needle.get(marathonFullAppPath, options, (error, response, body) =>
+      request(options, (error, response, body) =>
         resolve(this.sendToMarathonCallBack(error, response, body))
       )
     );
@@ -97,23 +106,40 @@ export class MarathonApi {
     );
     marathonFullAppPath = marathonFullAppPath.replace(/([^:]\/)\/+/g, '$1');
 
-    let options: NeedleOptions & CoreOptions = {
-      qs: { force: true } //Query string data
+    // let options: NeedleOptions & CoreOptions = {
+    //   qs: { force: true } //Query string data
+    // };
+    // if (this.config.useBasicAuthentication) {
+    //   options.username = this.config.marathonUser;
+    //   options.password = this.config.marathonPassword;
+    //   options.auth = 'basic';
+    // }
+    let options: request.UriOptions & request.CoreOptions = {
+      uri: marathonFullAppPath,
+      qs: { force: true }, //Query string data
+      method: 'PUT',
+      body: fs.createReadStream(marathonFilePath)
     };
     if (this.config.useBasicAuthentication) {
-      options.username = this.config.marathonUser;
-      options.password = this.config.marathonPassword;
-      options.auth = 'basic';
+      options.auth = {
+        user: this.config.marathonUser,
+        pass: this.config.marathonPassword
+      };
     }
 
-    return new Promise<string>((resolve, _) =>
-      needle.put(
-        marathonFullAppPath,
-        fs.createReadStream(marathonFilePath),
-        options,
-        (error, response, body) =>
+    return new Promise<string>(
+      (resolve, _) =>
+        request(options, (error, response, body) =>
           resolve(this.createOrUpdateAppCallBack(error, response, body))
-      )
+        )
+
+      // needle.put(
+      //   marathonFullAppPath,
+      //   fs.createReadStream(marathonFilePath),
+      //   options,
+      //   (error, response, body) =>
+      //     resolve(this.createOrUpdateAppCallBack(error, response, body))
+      // )
     );
   }
 
@@ -125,23 +151,22 @@ export class MarathonApi {
       throw new Error('Request marathon deploy error :'.concat(error));
     }
     logger.debug(body);
-    // let jsonResponse = body; //JSON.parse(body);
-    // if (response.statusCode >= 200 && response.statusCode < 400) {
-    //   // At this point the deployment was created successfully.
-    //   deploymentId = jsonResponse.deploymentId;
+    let jsonResponse = body; //JSON.parse(body);
+    if (response.statusCode >= 200 && response.statusCode < 400) {
+      // At this point the deployment was created successfully.
+      deploymentId = jsonResponse.deploymentId;
 
-    //   // Check if the deployment is in progress (if there is not a deployment, we force a restart to force a Docker image pull)
-    //   if (!await this.isDeploymentLaunchedAsync(deploymentId)) {
-    //     deploymentId = await this.restartAppAsync();
-    //   }
-    // } else {
-    //   throw new Error(
-    //     'Marathon deployment error :'.concat(jsonResponse.message)
-    //   );
-    // }
+      // Check if the deployment is in progress (if there is not a deployment, we force a restart to force a Docker image pull)
+      if (!await this.isDeploymentLaunchedAsync(deploymentId)) {
+        deploymentId = await this.restartAppAsync();
+      }
+    } else {
+      throw new Error(
+        'Marathon deployment error :'.concat(jsonResponse.message)
+      );
+    }
 
-    // return deploymentId;
-    return 'fakeId';
+    return deploymentId;
   }
 
   async isDeploymentLaunchedAsync(deploymentId: string) {
@@ -149,15 +174,21 @@ export class MarathonApi {
     let deploymentUrl = this.config.baseUrl.concat('/v2/deployments');
     deploymentUrl = deploymentUrl.replace(/([^:]\/)\/+/g, '$1');
 
-    let options: NeedleOptions = {};
+    // let options: NeedleOptions = {};
+    // if (this.config.useBasicAuthentication) {
+    //   options.username = this.config.marathonUser;
+    //   options.password = this.config.marathonPassword;
+    //   options.auth = 'basic';
+    // }
+    let options: request.CoreOptions = {};
     if (this.config.useBasicAuthentication) {
-      options.username = this.config.marathonUser;
-      options.password = this.config.marathonPassword;
-      options.auth = 'basic';
+      options.auth = {
+        user: this.config.marathonUser,
+        pass: this.config.marathonPassword
+      };
     }
-
     return new Promise<boolean>((resolve, _) =>
-      needle.get(deploymentUrl, (error, response, body) =>
+      request(deploymentUrl, options, (error, response, body) =>
         resolve(
           this.isDeploymentLaunchedCallBack(deploymentId, error, response, body)
         )
