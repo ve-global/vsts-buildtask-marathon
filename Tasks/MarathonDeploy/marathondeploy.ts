@@ -4,6 +4,7 @@ import marathonconfig = require('./marathonconfig');
 import MarathonConfig = marathonconfig.MarathonConfig;
 import marathonapi = require('./marathonapi');
 import MarathonApi = marathonapi.MarathonApi;
+import { setInterval } from 'timers';
 
 class Main {
   marathonApi: MarathonApi;
@@ -62,11 +63,30 @@ class Main {
     // }
   }
 
-  async waitUntilDeploymentFinishes(deploymentId: string) {
-    tl._writeLine(' ++ waitUntilDeploymentFinishes ++');
+  async waitUntilDeploymentFinishes(deploymentId: string){
     let deploymentInProgress = true;
     tl._writeLine('Deployment in progress: '.concat(deploymentId));
+    deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
+      deploymentId
+    );
+    if(!deploymentInProgress){
+      tl._writeLine('Deployment finished: '.concat(deploymentId));      
+    } else {
+      setTimeout(()=>{
+        this.waitUntilDeploymentFinishes(deploymentId);
+      },5000);
+    }
+  }
+  
 
+  async waitUntilDeploymentFinishes_2(deploymentId: string) {
+    let deploymentInProgress = true;
+    tl._writeLine('Deployment in progress: '.concat(deploymentId));
+    // var promise = new Promise<string>(function(resolve) {
+    //   setTimeout(function() {
+    //     resolve("fakeId");
+    //   }, 3000);
+    // });    
     // var p = new Promise<boolean>(resolve => {
     //   setTimeout(() => {
     //     resolve(true);
@@ -81,10 +101,10 @@ class Main {
 
     try {
       while (deploymentInProgress) {
-        //BRUTE FORCE
-        deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
-          deploymentId
-        );
+        // //BRUTE FORCE
+        // deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
+        //   deploymentId
+        // );
       }
     } catch (err) {}
 
