@@ -56,7 +56,7 @@ export class MarathonApi {
       throw new Error('Request marathon error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = body; //JSON.parse(body);
+    let jsonResponse = JSON.parse(body);
 
     switch (response.statusCode) {
       case 401:
@@ -151,7 +151,7 @@ export class MarathonApi {
       throw new Error('Request marathon deploy error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = body; //JSON.parse(body);
+    let jsonResponse = JSON.parse(body);
     if (response.statusCode >= 200 && response.statusCode < 400) {
       // At this point the deployment was created successfully.
       deploymentId = jsonResponse.deploymentId;
@@ -203,7 +203,6 @@ export class MarathonApi {
       throw new Error('Request marathon error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = body; // JSON.parse(body);
     let runningDeploymentMatcher = new RegExp(deploymentId).exec(body.trim());
     if (runningDeploymentMatcher) {
       deploymentLaunched = true;
@@ -221,20 +220,23 @@ export class MarathonApi {
     );
     restartUrl = restartUrl.replace(/([^:]\/)\/+/g, '$1');
 
-    let options: NeedleOptions & request.CoreOptions = {
+    let options: request.UriOptions & request.CoreOptions = {
+      uri: restartUrl,
       qs: { force: true }, //Query string data
+      method: 'POST',
       headers: {
         'content-type': 'application/json'
       }
     };
     if (this.config.useBasicAuthentication) {
-      options.username = this.config.marathonUser;
-      options.password = this.config.marathonPassword;
-      options.auth = 'basic';
+      options.auth = {
+        user: this.config.marathonUser,
+        pass: this.config.marathonPassword
+      };
     }
 
     return new Promise<string>((resolve, _) =>
-      needle.post(restartUrl, {}, options, (error, response, body) =>
+      request(options, (error, response, body) =>
         resolve(this.restartAppCallBack(error, response, body))
       )
     );
@@ -248,7 +250,7 @@ export class MarathonApi {
       throw new Error('Request marathon restart App error :'.concat(error));
     }
     logger.debug(body);
-    let jsonResponse = body; //JSON.parse(body);
+    let jsonResponse = JSON.parse(body);
     if (response.statusCode == 200) {
       deploymentId = jsonResponse.deploymentId;
     } else {

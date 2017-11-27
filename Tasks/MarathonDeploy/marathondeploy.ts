@@ -81,10 +81,10 @@ class Main {
 
     try {
       while (deploymentInProgress) {
-        // //BRUTE FORCE
-        // deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
-        //   deploymentId
-        // );
+        //BRUTE FORCE
+        deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(
+          deploymentId
+        );
       }
     } catch (err) {}
 
