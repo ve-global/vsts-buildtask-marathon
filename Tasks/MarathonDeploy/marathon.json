@@ -1,0 +1,44 @@
+{
+  "id": "/verome/ve.rome.baseapi.service",
+  "cpus": 0.2,
+  "mem": 128,
+  "disk": 0,
+  "instances": 1,
+  "acceptedResourceRoles": [
+    "*"
+  ],
+  "container": {
+    "type": "DOCKER",
+    "volumes": [],
+    "docker": {
+      "image": "docker-registry.veinteractive.com/ve.rome.baseapi.service:2017.11.24.02",
+      "network": "BRIDGE",
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 0,
+          "protocol": "tcp",
+          "name": "http"
+        }
+      ]
+    }
+  },
+  "healthChecks": [
+    {
+      "portIndex": 0,
+      "path": "/version",
+      "protocol": "HTTP"
+    }
+  ],
+  "env": {
+    "ASPNETCORE_ENVIRONMENT": "Development"
+  },
+  "labels": {
+    "HAPROXY_0_GROUP": "external",
+    "HAPROXY_0_VHOST": "base.verome.ve-ci.com",
+    "HAPROXY_0_ENABLED": "true"
+  },
+  "uris": [
+    "file:///var/ve/docker_registry/docker.tar.gz"
+  ]
+}

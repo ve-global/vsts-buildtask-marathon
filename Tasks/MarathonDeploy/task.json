@@ -12,8 +12,8 @@
   ],
   "demands": [],
   "version": {
-    "Major": "0",
-    "Minor": "2",
+    "Major": "1",
+    "Minor": "0",
     "Patch": "2"
   },
   "minimumAgentVersion": "1.95.0",
@@ -50,6 +50,14 @@
       "defaultValue": "false",
       "required": false,
       "helpMarkDown": "Fail the task when the application was previously scaled to 0."
+    },
+    {
+      "name": "showDeploymentProgress",
+      "type": "boolean",
+      "label": "Show Deployment Progress",
+      "defaultValue": "true",
+      "required": false,
+      "helpMarkDown": "If checked, the build process will wait until the deployment finishes and will only succeed if the deployment is successful."
     }
   ],
   "execution": {
