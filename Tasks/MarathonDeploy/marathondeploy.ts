@@ -31,8 +31,10 @@ class Main {
             this.marathonApi = new MarathonApi(config);
             const deploymentId = await this.marathonApi.sendToMarathonAsync();
 
-            this.waitUntilDeploymentFinishes(deploymentId);
-            
+            while (await this.marathonApi.isDeploymentLaunchedAsync(deploymentId)) {
+                await this.wait(5000);
+            }
+                        
             tl.setResult(tl.TaskResult.Succeeded, "Deployment Succeeded.");
         }
         catch (err) {
@@ -66,22 +68,11 @@ class Main {
         }
     }
 
-    waitUntilDeploymentFinishes(deploymentId: string) {
-        let deploymentInProgress = true;
-        tl._writeLine("Deployment in progress: ".concat(deploymentId));
-        let intervalID = setInterval(async ()=>{ deploymentInProgress = await this.marathonApi.isDeploymentLaunchedAsync(deploymentId) }, 500);
-
-        try {
-            while (deploymentInProgress) {
-                // Waiting deployment...
-            }
-        }
-        catch (err) {
-        }
-
-        tl._writeLine("Deployment finished: ".concat(deploymentId));
-        clearTimeout(intervalID);                        
-    }
+    wait(ms) {
+        return new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        });
+      }
 }   
 
 new Main().run();

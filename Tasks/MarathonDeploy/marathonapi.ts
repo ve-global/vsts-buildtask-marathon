@@ -1,14 +1,8 @@
 import logger = require('vsts-task-lib');
 import request = require('request');
-import needle = require('needle');
 import fs = require('fs');
 import marathonconfig = require('./marathonconfig');
 import MarathonConfig = marathonconfig.MarathonConfig;
-import { RequestOptions } from 'http';
-import { userInfo } from 'os';
-import { CoreOptions, UriOptions } from 'request';
-import { Request } from '_debugger';
-import { NeedleOptions } from 'needle';
 
 export class MarathonApi {
     config: MarathonConfig;
@@ -22,16 +16,16 @@ export class MarathonApi {
         marathonFullAppPath = marathonFullAppPath.replace(/([^:]\/)\/+/g, "$1");
         logger.debug("marathonFullAppPath : " + marathonFullAppPath);
 
-        let options: (NeedleOptions) = {};
+        let options: (request.UriOptions & request.CoreOptions) = {
+            uri: marathonFullAppPath
+        };
         if (this.config.useBasicAuthentication) {
-            options.username = this.config.marathonUser;
-            options.password = this.config.marathonPassword;
-            options.auth = "basic";
+            options.auth = {
+                user: this.config.marathonUser,
+                pass: this.config.marathonPassword
+            };
         }
-
-        return new Promise<string>((resolve, _) => needle.get(
-            marathonFullAppPath,
-            options,
+        return new Promise<string>((resolve, _) => request(options, 
             (error, response, body) => resolve(this.sendToMarathonCallBack(error, response, body))));
     }
 
@@ -77,19 +71,20 @@ export class MarathonApi {
         let marathonFullAppPath = this.config.baseUrl.concat("/v2/apps/", this.config.identifier);
         marathonFullAppPath = marathonFullAppPath.replace(/([^:]\/)\/+/g, "$1");
 
-        let options: (NeedleOptions & CoreOptions) = {
-            qs: { force: true } //Query string data
+        let options: request.UriOptions & request.CoreOptions = {
+            uri: marathonFullAppPath,
+            qs: { force: true }, //Query string data
+            method: 'PUT',
+            body: fs.createReadStream(marathonFilePath)
         };
         if (this.config.useBasicAuthentication) {
-            options.username = this.config.marathonUser;
-            options.password = this.config.marathonPassword;
-            options.auth = "basic";
+            options.auth = {
+                user: this.config.marathonUser,
+                pass: this.config.marathonPassword
+            };
         }
                 
-        return new Promise<string>((resolve, _) => needle.put(
-            marathonFullAppPath,
-            fs.createReadStream(marathonFilePath),
-            options,
+        return new Promise<string>((resolve, _) => request(options,
             (error, response, body) => resolve(this.createOrUpdateAppCallBack(error, response, body))));
     }
 
@@ -122,15 +117,15 @@ export class MarathonApi {
         let deploymentUrl = this.config.baseUrl.concat("/v2/deployments");
         deploymentUrl = deploymentUrl.replace(/([^:]\/)\/+/g, "$1");
 
-        let options: (NeedleOptions) = {};
+        let options: request.CoreOptions = {};
         if (this.config.useBasicAuthentication) {
-            options.username = this.config.marathonUser;
-            options.password = this.config.marathonPassword;
-            options.auth = "basic";
+            options.auth = {
+                user: this.config.marathonUser,
+                pass: this.config.marathonPassword
+            };
         }
 
-        return new Promise<boolean>((resolve, _) => needle.get(
-            deploymentUrl,
+        return new Promise<boolean>((resolve, _) => request(deploymentUrl, options,
             (error, response, body) => resolve(this.isDeploymentLaunchedCallBack(deploymentId, error, response, body))));
     }
 
@@ -155,22 +150,22 @@ export class MarathonApi {
         let restartUrl = this.config.baseUrl.concat("/v2/apps/", this.config.identifier , "/restart");
         restartUrl = restartUrl.replace(/([^:]\/)\/+/g, "$1");
         
-        let options: (NeedleOptions & request.CoreOptions) = {
+        let options: request.UriOptions & request.CoreOptions = {
+            uri: restartUrl,
             qs: { force: true }, //Query string data
+            method: 'POST',
             headers: {
                 'content-type': 'application/json'
             }
         };
         if (this.config.useBasicAuthentication) {
-            options.username = this.config.marathonUser;
-            options.password = this.config.marathonPassword;
-            options.auth = "basic";
+            options.auth = {
+                user: this.config.marathonUser,
+                pass: this.config.marathonPassword
+            };
         }
         
-        return new Promise<string>((resolve, _) => needle.post(
-            restartUrl,
-            {},
-            options,
+        return new Promise<string>((resolve, _) => request(options,
             (error, response, body) => resolve(this.restartAppCallBack(error, response, body))));
     }
 

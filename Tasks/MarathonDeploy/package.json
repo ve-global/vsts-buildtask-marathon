@@ -1,6 +1,6 @@
 {
   "name": "marathondeploy",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "VSTS Build task extension for marathon deploy",
   "main": "marathondeploy.js",
   "scripts": {
@@ -16,10 +16,8 @@
     "@types/node": "^7.0.31",
     "@types/q": "^1.0.0",
     "@types/request": "0.0.45",
-    "@types/needle": "2.0.2",
     "path": "^0.12.7",
     "request": "^2.81.0",
-    "vsts-task-lib": "^1.1.0",
-    "needle": "^2.0.1"
+    "vsts-task-lib": "^1.1.0"
   }
 }
